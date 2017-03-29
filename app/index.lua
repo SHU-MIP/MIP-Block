@@ -35,7 +35,6 @@ local function isOften(token)
 end
 
 
-
 if args["token"]~=nil and args["page"]~=nil and args["expression"]~=nil then
   local e = args["expression"]
   local p = args["page"]
@@ -43,18 +42,16 @@ if args["token"]~=nil and args["page"]~=nil and args["expression"]~=nil then
   if isLogin(args["token"]) then
     if not isOften(args["token"]) then
       -- 访问太频繁
-      ngx.say("{error:-3}")
+      ngx.say('{"error": -3, "msg": "too often visit"}')
     else
-      -- local url = "http://localhost:8080/m/s?expression="..e.."&page="..p
-      -- local url = "http://127.0.0.1:8080/m/s?expression=S%26K&page=1"
       local res = ngx.location.capture("/proxy",{args={expression=e,page=p}})
       ngx.say(res.body)
     end
   else
     -- 未登陆
-    ngx.say("{error:-1}")
+    ngx.say('{"error":-1,"msg":"please login and visit"}')
   end
 else
   -- 参数不完整
-  ngx.say("{error:-2}")
+  ngx.say('{"error":-2,"msg":"please check your expression"}')
 end
