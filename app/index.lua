@@ -1,7 +1,6 @@
 local args = ngx.req.get_uri_args()
 
 
-
 local redis = require "resty.redis"
 redis.add_commands("sadd")
 local cache= redis:new()
@@ -75,6 +74,7 @@ recordLog(tp,ep)
 
 
 if args["token"]~=nil and args["page"]~=nil and args["expression"]~=nil then
+
   local e = args["expression"]
   local p = args["page"]
 
@@ -84,7 +84,12 @@ if args["token"]~=nil and args["page"]~=nil and args["expression"]~=nil then
       ngx.say('{"error": -3, "msg": "too often visit"}')
     else
       local res = ngx.location.capture("/proxy",{args={expression=e,page=p}})
-      ngx.say(res.body)
+      local resStatus = res.status
+      if resStatus==200 then
+        ngx.say(res.body)
+      else
+        ngx.say('{"error": -14, "msg": "waiting solving the problem"}')
+      end
     end
   else
     -- 未登陆
