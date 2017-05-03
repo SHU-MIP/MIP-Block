@@ -1,6 +1,5 @@
 local args = ngx.req.get_uri_args()
 
-
 local redis = require "resty.redis"
 redis.add_commands("sadd")
 local cache= redis:new()
@@ -77,13 +76,14 @@ if args["token"]~=nil and args["page"]~=nil and args["expression"]~=nil then
 
   local e = args["expression"]
   local p = args["page"]
+  local c = args["computed"]
 
   if isLogin(args["token"]) then
     if not isOften(args["token"]) then
       -- 访问太频繁
       ngx.say('{"error": -3, "msg": "too often visit"}')
     else
-      local res = ngx.location.capture("/proxy",{args={expression=e,page=p}})
+      local res = ngx.location.capture("/proxyMain",{args={expression=e,page=p,computed=c}})
       local resStatus = res.status
       if resStatus==200 then
         ngx.say(res.body)
