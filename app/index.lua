@@ -1,6 +1,5 @@
 local args = ngx.req.get_uri_args()
 
-
 local redis = require "resty.redis"
 redis.add_commands("sadd")
 local cache= redis:new()
@@ -16,13 +15,19 @@ end
 local function isLogin(token)
   res,err = cache:get(token.."Login")
   if res==ngx.null or tonumber(res)==0 then
-    return false
+    return -1
   else
-    return true
+    return tonumber(res)
   end
 end
 
-local function isOften(token)
+local function isOften(token,grade)
+  if grade==1 then
+    --body...
+    -- 不限制次数
+    return true
+  end
+
   res,err = cache:get(token)
 
   if res==ngx.null then
@@ -30,12 +35,19 @@ local function isOften(token)
     cache:expire(token,"60")
     return true
   else
-    if tonumber(res)>=10 then
-      return false
+    if grade==2 then
+      --body...
+      if tonumber(res)>=20 then
+        return false
+      end
     else
-      cache:incr(token)
-      return true
+      if tonumber(res)>=10 then
+        return false
+      end
     end
+    cache:incr(token)
+    return true
+
   end
 end
 
@@ -77,13 +89,37 @@ if args["token"]~=nil and args["page"]~=nil and args["expression"]~=nil then
 
   local e = args["expression"]
   local p = args["page"]
+  local c = args["computed"]
 
-  if isLogin(args["token"]) then
-    if not isOften(args["token"]) then
+  if args["token"]=="123456789" then
+    --body...
+    if not isOften(args["token"],3) then
+      -- 访问太频繁
+      ngx.say('{"error": -3, "msg": "limited visit frequency (10 times 1 minute)"}')
+      return
+    else
+      local res = ngx.location.capture("/proxyMain",{
+                       args = ngx.encode_args({expression=e,page=p,computed=c})
+                   })
+      local resStatus = res.status
+      if resStatus==200 then
+        ngx.say(res.body)
+        return
+      else
+        ngx.say('{"error": -14, "msg": "waiting solving the problem"}')
+        return
+      end
+    end
+  end
+
+  if isLogin(args["token"])~=-1 then
+    if not isOften(args["token"],isLogin(args["token"])) then
       -- 访问太频繁
       ngx.say('{"error": -3, "msg": "too often visit"}')
     else
-      local res = ngx.location.capture("/proxy",{args={expression=e,page=p}})
+      local res = ngx.location.capture("/proxyMain",{
+                       args = ngx.encode_args({expression=e,page=p,computed=c})
+                   })
       local resStatus = res.status
       if resStatus==200 then
         ngx.say(res.body)
