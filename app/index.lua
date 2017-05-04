@@ -98,7 +98,9 @@ if args["token"]~=nil and args["page"]~=nil and args["expression"]~=nil then
       ngx.say('{"error": -3, "msg": "limited visit frequency (10 times 1 minute)"}')
       return
     else
-      local res = ngx.location.capture("/proxyMain",{args={expression=e,page=p,computed=c}})
+      local res = ngx.location.capture("/proxyMain",{
+                       args = ngx.encode_args({expression=e,page=p,computed=c})
+                   })
       local resStatus = res.status
       if resStatus==200 then
         ngx.say(res.body)
@@ -115,7 +117,9 @@ if args["token"]~=nil and args["page"]~=nil and args["expression"]~=nil then
       -- 访问太频繁
       ngx.say('{"error": -3, "msg": "too often visit"}')
     else
-      local res = ngx.location.capture("/proxyMain",{args={expression=e,page=p,computed=c}})
+      local res = ngx.location.capture("/proxyMain",{
+                       args = ngx.encode_args({expression=e,page=p,computed=c})
+                   })
       local resStatus = res.status
       if resStatus==200 then
         ngx.say(res.body)
